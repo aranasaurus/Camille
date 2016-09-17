@@ -2,12 +2,12 @@ import Bot
 
 let bot = try SlackBot(
     configDataSource: DefaultConfigDataSource,
-    authenticator: OAuthAuthentication.self,
-    storage: RedisStorage.self,
+    authenticator: TokenAuthentication.self,
+    storage: MemoryStorage.self,
     services: [
         SwiftDocService(),
         HelloService(),
-        KarmaService(options: KarmaOptions(
+        KarmaService(options: KarmaServiceOptions(
             addText: "++",
             removeText: "--",
             textDistanceThreshold: 4

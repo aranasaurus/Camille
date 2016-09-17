@@ -24,7 +24,7 @@ enum KarmaAction {
     }
 }
 
-struct KarmaOptions {
+struct KarmaServiceOptions {
     let targets: [String]?
     
     let addText: String?
@@ -33,6 +33,7 @@ struct KarmaOptions {
     let removeReaction: String?
     
     let textDistanceThreshold: Int
+    let allowedBufferCharacters: Set<Character>
     
     init(
         targets: [String]? = nil,
@@ -40,7 +41,8 @@ struct KarmaOptions {
         addReaction: String? = nil,
         removeText: String? = nil,
         removeReaction: String? = nil,
-        textDistanceThreshold: Int = 4
+        textDistanceThreshold: Int = 4,
+        allowedBufferCharacters: Set<Character> = [" ", ":"]
         ) {
         self.targets = targets
         self.addText = addText
@@ -48,23 +50,17 @@ struct KarmaOptions {
         self.removeText = removeText
         self.removeReaction = removeReaction
         self.textDistanceThreshold = textDistanceThreshold
+        self.allowedBufferCharacters = allowedBufferCharacters
     }
 }
 
 final class KarmaService: SlackMessageService {
     //MARK: - Private Properties
-    private let options: KarmaOptions
-    private let config: Config
+    private let options: KarmaServiceOptions
     
     //MARK: - Lifecycle
-    init(options: KarmaOptions) {
+    init(options: KarmaServiceOptions) {
         self.options = options
-        
-        let config = try! Config(
-            supportedItems: AllConfigItems(),
-            source: DefaultConfigDataSource
-        )
-        self.config = config
     }
     
     //MARK: - Event Dispatch
@@ -134,12 +130,14 @@ final class KarmaService: SlackMessageService {
         if
             let add = self.options.addText,
             let possibleAdd = message.text.range(of: add)?.lowerBound,
-            message.text.distance(from: userIndex, to: possibleAdd) <= self.options.textDistanceThreshold { return .Add }
+            message.text.distance(from: userIndex, to: possibleAdd) <= self.options.textDistanceThreshold,
+            message.text.substring(with: userIndex..<possibleAdd).containsOnly(characters: self.options.allowedBufferCharacters) { return .Add }
             
         else if
             let remove = self.options.removeText,
             let possibleRemove = message.text.range(of: remove)?.lowerBound,
-            message.text.distance(from: userIndex, to: possibleRemove) <= self.options.textDistanceThreshold { return .Remove }
+            message.text.distance(from: userIndex, to: possibleRemove) <= self.options.textDistanceThreshold,
+            message.text.substring(with: userIndex..<possibleRemove).containsOnly(characters: self.options.allowedBufferCharacters){ return .Remove }
         
         return nil
     }
