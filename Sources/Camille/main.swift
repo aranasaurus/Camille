@@ -5,8 +5,9 @@ let bot = try SlackBot(
     authenticator: OAuthAuthentication.self,
     storage: RedisStorage.self,
     services: [
-        HelloBot(),
-        KarmaBot(options: KarmaBotOptions(
+        SwiftDocService(),
+        HelloService(),
+        KarmaService(options: KarmaOptions(
             addText: "++",
             removeText: "--",
             textDistanceThreshold: 4
